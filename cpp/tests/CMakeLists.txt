@@ -1,0 +1,3 @@
+add_executable(test_tokenizer test_tokenizer.cpp)
+target_link_libraries(test_tokenizer PRIVATE javi_core)
+add_test(NAME tokenizer_test COMMAND test_tokenizer)
