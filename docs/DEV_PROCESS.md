@@ -91,39 +91,54 @@
 - 완료조건:
   - 예제 tool 구현 및 테스트
 
-### Phase 1: DAG Engine
+### Phase 1: DAG Engine Components
 
-**004: Plan validation (JSON Schema)**
-- 목표: JSON Schema 검증 이해
+**004: Task DAG Generator**
+- 목표: Plan → DAG 변환 및 위상 정렬 이해
 - 작업내역:
-  - `/poc/utils/validator.py` - Plan/Step 검증
-  - JSON Schema 정의
-  - 의존성 순환 체크
-- 완료조건:
-  - 유효/무효 플랜 검증 테스트
-
-**005: DAG Engine core (Topological Execution)**
-- 목표: 위상 정렬 및 DAG 이해
-- 작업내역:
-  - `/poc/dag_engine.py` - DAG Engine 클래스
-  - 위상 정렬 알고리즘
-  - 의존성 해결
+  - `/poc/dag_generator.py` - DAG Generator 클래스
+  - 의존성 그래프 빌딩
+  - 위상 정렬 알고리즘 (Kahn's algorithm)
+  - 실행 큐 생성
 - 완료조건:
   - 유닛테스트 5개 이상 통과
-  - 순차/병렬 실행 검증
+  - 순환 감지 테스트 통과
 
-**006: DAG Engine + State Manager 통합**
-- 목표: DAG 실행 시 상태 저장 이해
+**005: Workflow Engine**
+- 목표: 워크플로우 실행 및 상태 추적 이해
 - 작업내역:
-  - Step 실행 후 상태 저장
-  - 실패 시 복구 로직 연결
-  - State cleanup
+  - `/poc/workflow_engine.py` - Workflow Engine 클래스
+  - 스텝 상태 관리 (pending, running, completed, failed)
+  - 의존성 체크
+  - Worker Pool에 제출
 - 완료조건:
-  - End-to-end 테스트 통과
+  - 유닛테스트 5개 이상 통과
+  - 워크플로우 실행 테스트 통과
+
+**006: Worker Pool**
+- 목표: 병렬 실행 및 리트라이 로직 이해
+- 작업내역:
+  - `/poc/worker_pool.py` - Worker Pool 클래스
+  - 병렬 실행 (asyncio/threading)
+  - 리트라이 로직 연결
+  - 리소스 할당
+- 완료조건:
+  - 유닛테스트 5개 이상 통과
+  - 병렬 실행 테스트 통과
+
+**007: DAG Engine Components 통합**
+- 목표: DAG Generator + Workflow + Worker 통합 이해
+- 작업내역:
+  - End-to-end 통합 테스트
+  - State Manager와 통합
+  - 에러 핸들링
+- 완료조건:
+  - E2E 테스트 통과
+  - State 저장/복구 검증
 
 ### Phase 2: Tools
 
-**007: Mock tools (search, summarize)**
+**008: Mock tools (search, summarize)**
 - 목표: Tool contract 구현 연습
 - 작업내역:
   - `/poc/tools/mock_search.py`
@@ -132,7 +147,7 @@
 - 완료조건:
   - 유닛테스트 각 3개 이상
 
-**008: C++ tokenizer + Python binding**
+**009: C++ tokenizer + Python binding**
 - 목표: pybind11 바인딩 이해
 - 작업내역:
   - `/cpp/src/tokenizer.cpp` (기존)
@@ -141,7 +156,7 @@
 - 완료조건:
   - Python에서 C++ tokenizer 호출 테스트
 
-**009: Python inference adapter**
+**010: Python inference adapter**
 - 목표: inference 인터페이스 설계 이해
 - 작업내역:
   - `/poc/inference_adapter.py`
@@ -152,7 +167,7 @@
 
 ### Phase 3: Production (선택적)
 
-**010: Redis backend for State Manager**
+**011: Redis backend for State Manager**
 - 목표: 분산 상태 저장소 이해
 - 작업내역:
   - Redis backend 구현
@@ -161,7 +176,7 @@
 - 완료조건:
   - 통합 테스트 통과
 
-**011: CI/CD integration**
+**012: CI/CD integration**
 - 목표: CI/CD 파이프라인 이해
 - 작업내역:
   - `.github/workflows/ci.yml`
@@ -170,7 +185,7 @@
 - 완료조건:
   - PR에서 CI 통과
 
-**012: Monitoring & Logging**
+**013: Monitoring & Logging**
 - 목표: 로깅 구조화 및 메트릭 이해
 - 작업내역:
   - Structured logging
@@ -200,15 +215,30 @@
 ## 하이브리드 런타임 아키텍처 요약
 
 ```
-Runtime → Planner → DAG Engine → State Manager → Tool Adapters → Tools
-                                    ↓
-                              (Redis/DB)
+API Layer
+  ↓
+Agent Planner (LLM)
+  ↓
+Graph Runtime
+  ↓
+Task DAG Generator
+  ↓
+Workflow Engine
+  ↓
+State Manager
+  ↓
+Worker Pool
+  ↓
+Tool Adapters
+  ↓
+Tools
 ```
 
 **핵심 특징:**
 - **DAG for Execution**: 위상 정렬, 순차/병렬 실행
 - **State for Resilience**: 각 스텝 상태 저장
 - **Recovery for Fault Tolerance**: 자동 재시도/캐시 재사용
+- **Separation of Concerns**: DAG Generation, Workflow, Worker Pool 분리
 - **Simple yet Production-Ready**: 단순하지만 프로덕션 준비
 
 ---
